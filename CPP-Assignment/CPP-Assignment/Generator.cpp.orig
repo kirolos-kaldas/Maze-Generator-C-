@@ -1,0 +1,156 @@
+#include "Generator.h"
+#include <vector>
+#include <random>
+#include <iostream>
+#include <chrono>
+#include <cstdlib>
+#include <string>
+
+Generator::Generator()
+{
+	
+}
+
+Generator::~Generator()
+{
+
+}
+
+<<<<<<< b8631b129171bd9af9d9de42d20c165acc663d98
+=======
+void Generator::SaveSVG(const char *fileName, const Maze& maze) const
+{
+	cout << "Saving svg maze: " << fileName << endl;
+
+	ofstream svgFile(fileName, ofstream::out);
+	
+	const vector<Edge> edges = maze.GetEdges();
+	const int width = maze.GetWidth();
+	const int height = maze.GetHeight();
+	const float strokeWidth = 0.0019;
+
+	svgFile << "<svg viewBox='0 0 1 1' width='500' height='500' "
+		"xmlns='http://www.w3.org/2000/svg'>\n"
+		"<rect width='1' height='1' style='fill: black' />" << endl;
+
+	for (auto edge : edges)
+	{
+		if (edge.GetExists())
+		{
+			svgFile << "<line stroke='white' stroke-width='" << strokeWidth << "'"
+				" x1='" << float(edge.GetFromX()) / width << "'"
+				" y1='" << float(edge.GetFromY()) / height << "'"
+				" x2='" << float(edge.GetToX()) / width << "'"
+				" y2='" << float(edge.GetToY()) / height << "'/>\n";
+
+			svgFile << "<!-- x1='" << edge.GetFromX() << "-->\n";
+			svgFile << "<!-- y1='" << edge.GetFromY() << "-->\n";
+			svgFile << "<!-- x2='" << edge.GetToX() << "-->\n";
+			svgFile << "<!-- y2='" << edge.GetToY() << "-->\n";
+		}
+	}
+
+	svgFile << "</svg>" << flush;
+	svgFile.close();
+}
+
+>>>>>>> Seeding is fixed and done
+//@Author Paul Miller
+int Generator::GetRandNum(const int min, const int max, unsigned long seed) const
+{
+	int random = seed % max;
+	return random;
+}
+
+int Generator::GenerateSeed(const int min, const int max) const
+{
+	//get the duration since the unix epoch began
+	auto duration = std::chrono::system_clock::now().time_since_epoch();
+
+	//seed with number of milliseconds since the unix epoch began
+	mt19937 seed(chrono::duration_cast<chrono::milliseconds>(
+		duration).count());
+
+	//set the range for the generator
+	uniform_int_distribution<unsigned> dist(min, max);
+
+	return dist(seed);
+}
+
+//************************************
+// Method:    AldousBroderAlgorithm
+// FullName:  Generator::AldousBroderAlgorithm
+// Access:    public 
+// Returns:   void
+// Description:
+// Parameter: Maze & maze
+//************************************
+void Generator::AldousBroderAlgorithm(Maze& maze)
+{
+	mt19937 mersenne(maze.GetSeed());
+	
+	int maxWidth = maze.GetWidth();
+	int maxHeight = maze.GetHeight();
+
+	const int mazeSize = maxWidth * maxHeight;
+
+	maze.SetSeed(mersenne());
+	int x = GetRandNum(0, maxWidth - 1, maze.GetSeed());
+	maze.SetSeed(mersenne());
+	int y = GetRandNum(0, maxHeight - 1, maze.GetSeed());
+	maze.SetSeed(mersenne());
+
+	Cells& map = maze.GetMap();
+
+	Cell& randomCell = map[x][y];
+	randomCell.SetVisited(true);
+	vector<Edge> edges;
+
+	int numVisited = 1;
+
+	while (numVisited < mazeSize)
+	{
+		direction randomDir = static_cast<direction>(GetRandNum(0, NEIGHBOURS_AMOUNT, maze.GetSeed()));
+		maze.SetSeed(mersenne());
+
+		int checkX = randomCell.GetX() + X_Axis_Movement[randomDir];
+		int checkY = randomCell.GetY() + Y_Axis_Movement[randomDir];
+
+		if (maze.existInMaze(checkX, checkY))
+		{
+			Cell& checkCell = map[checkX][checkY];
+			//printf("X: %d \t Y: %d \n", checkX, checkY);
+
+			if (!checkCell.GetVisited())
+			{
+				checkCell.SetVisited(true);
+				numVisited++;
+<<<<<<< b8631b129171bd9af9d9de42d20c165acc663d98
+				float percentCompleted = (numVisited / (float)mazeSize) * 100.0f;
+				printf("%.2f%% generated\n", percentCompleted);
+
+				Edge edge(randomCell.GetX(), randomCell.GetY(), checkX, checkY);
+				edges.push_back(edge);
+=======
+				cout << numVisited << "\n";
+
+				/*vector<Edge>& edges = maze.GetEdges();
+				Edge lookingForDisOne(randomCell.GetX(), randomCell.GetY(), checkX, checkY);
+
+				for (auto& edge : edges)
+				{
+					if (edge == lookingForDisOne) 
+					{
+						edge.SetExists(true);
+					}
+				}*/
+>>>>>>> Seeding is fixed and done
+			}
+			
+			randomCell = checkCell;
+		}
+	}
+
+	maze.SetEdges(edges);
+	maze.SetNumEdges(edges.size());
+}

@@ -1,0 +1,212 @@
+#include "Main.h"
+
+using namespace std;
+
+int main(int argc, char ** argv)
+{
+	ArgsParser cmdArgs(argc, argv);
+
+	if (argc <= 1 || strcmp(argv[1], "--g") != 0 && strcmp(argv[1], "--lb") != 0)
+	{
+		PrintInvalidCmdError();
+		return EXIT_FAILURE;
+	}
+
+	//If we specify to load a binary we can't generating
+	if (cmdArgs.CmdOptionExists("--lb"))
+	{
+		//If we specify to load a binary we must be saving an svg, 
+		//there's no point just loading a binary and doing nothing
+		if(cmdArgs.CmdOptionExists("--sv"))
+		{
+			string binaryName = cmdArgs.GetCmdOption("--lb");
+			cout << "Loading Binary " << binaryName.c_str() << endl;
+
+<<<<<<< 02c74f0703105d7ab81e52c36d23593a2005af67
+			//CheckSaveSVGAndBinary(cmdArgs);
+		}
+
+		else
+		{
+			PrintInvalidCmdError();
+			return EXIT_FAILURE;
+		}
+=======
+		Maze maze(0, 0, 0);
+		if (maze.LoadBinary(binaryName.c_str()) == false)
+		{
+			cout << "The error is in the binary file: " << binaryName.c_str() << endl;
+		}
+
+		//CheckSaveSVGAndBinary(cmdArgs);
+>>>>>>> Load binary maze is implemented
+	}
+
+
+	else if (cmdArgs.CmdOptionExists("--g"))
+	{
+		Generator gen;
+
+		int width, height, seed;
+		
+		//If seed, width and height are specified
+		if (argc >= 5)
+		{	
+			//Ensure the specified values are unsigned ints
+			if (IsUInt(argv[ARG_SEED]) && IsUInt((argv[ARG_WIDTH])) && IsUInt(argv[ARG_HEIGHT]))
+			{
+				seed = GetMazeVal(argv[ARG_SEED]);
+				width = GetMazeVal((argv[ARG_WIDTH]));
+				height = GetMazeVal((argv[ARG_HEIGHT]));
+			}
+
+			//Error. Arg might contain the width as 1f00 for e.g. or it might be negative
+			else
+			{
+				cout << "Seed, Width or Height was invalid!" << endl;
+				PrintInvalidCmdError();
+				return EXIT_FAILURE;
+			}
+		}
+
+		// Seed was specified or only a width or only a height was given 
+		else if (argc == 3 || argc == 4)
+		{
+			seed = GetMazeVal(argv[ARG_SEED]);
+			width = DEFAULT_WIDTH;
+			height = DEFAULT_HEIGHT;
+		}
+
+		//or if we don't specify a seed or only a width or only a height was given
+		else if (argc == 2)
+		{
+			seed = gen.GenerateSeed(0, INT_MAX);
+			width = DEFAULT_WIDTH;
+			height = DEFAULT_HEIGHT;
+		}
+
+		//specified a width and height but no seed
+		else
+		{
+			seed = gen.GenerateSeed(0, INT_MAX);
+			width = GetMazeVal((argv[ARG_WIDTH - 1]));
+			height = GetMazeVal((argv[ARG_HEIGHT - 1]));
+		}
+
+<<<<<<< 02c74f0703105d7ab81e52c36d23593a2005af67
+		// If specified width, height or seed was invalid in some way
+		if (seed <= -1 || width <= -1 || height <= -1)
+		{
+			cout << "Specified seed, width or height was invalid!" << endl;
+			PrintInvalidCmdError();
+			return EXIT_FAILURE;
+		}
+
+		if (width < DEFAULT_WIDTH || height < DEFAULT_HEIGHT)
+		{
+			printf("Width or Height are too small, width must be >= %d and height must be >= %d", DEFAULT_WIDTH, DEFAULT_HEIGHT);
+			PrintInvalidCmdError();
+			return EXIT_FAILURE;
+		}
+
+		//We always want square mazes
+		if (width != height)
+		{
+			int mazeSize = (width < height) ? height : width;
+			width = mazeSize;
+			height = mazeSize;
+
+			printf("WARNING: Maze wasn't square, setting maze to max of width and height to be square. Maze width and height is now: %d", width);
+		}
+
+		Maze maze(width, height, seed);
+=======
+		Maze maze(width, height, seed);
+		
+>>>>>>> Load binary maze is implemented
+		gen.AldousBroderMaze(maze);
+
+		bool validSave = CheckSaveSVGAndBinary(cmdArgs, maze);
+
+		//Save wasn't valid or we didn't specify to save a file after generating
+		if (!validSave)
+		{
+			PrintInvalidCmdError();
+			return EXIT_FAILURE;
+		}
+	}
+
+	return EXIT_SUCCESS;
+}
+
+void PrintInvalidCmdError()
+{
+	cout << "\n\n";
+	cout << "INVALID COMMAND. Please match one of the following: " << endl;
+
+	cout << "./mazer --lb filename.maze --sv filename.svg # load binary file and save svg file \n"
+		"./mazer --g seed --sb filename.maze # generate with seed value, save binary file\n"
+		"./mazer --g seed --sv filename.svg # generate with seed value, save svg file\n"
+		"./mazer --g seed --sb filename.maze --sv filename.svg # gen with seed, save binary, save svg"
+		"./mazer --g seed width height ... #save afterwards" << endl;
+}
+
+int GetMazeVal(const char* arg)
+{
+	if (IsUInt(arg))
+		return atoi(arg);
+	else
+		return -1;
+}
+
+bool CheckSaveBinary(const ArgsParser& cmdArgs, const Maze& maze)
+{
+	string binaryName = cmdArgs.GetCmdOption("--sb");
+	if (cmdArgs.CmdOptionExists("--sb") && strcmp(binaryName.c_str(), ""))
+	{
+		cout << "Saving Binary " << binaryName.c_str() << endl;
+		maze.SaveBinary(binaryName.c_str());
+
+		return true;
+	}
+
+	cout << "Invalid Binary Save!" << endl;
+	return false;
+}
+
+bool CheckSaveSVG(const ArgsParser& cmdArgs, const Maze& maze)
+{
+	string svgName = cmdArgs.GetCmdOption("--sv");
+	if (cmdArgs.CmdOptionExists("--sv") && strcmp(svgName.c_str(), ""))
+	{
+		if (svgName.find(".svg") == std::string::npos)
+		{
+			cout << "Missing .svg extension on filename to be saved!\n";
+			return false;
+		}
+
+		cout << "Saving SVG " << svgName.c_str() << endl;
+		bool saveSuccessful = maze.SaveSVG(svgName.c_str());
+		return saveSuccessful;
+	}
+	cout << "Invalid SVG Save!" << endl;
+	return false;
+}
+
+bool CheckSaveSVGAndBinary(const ArgsParser& cmdArgs, const Maze& maze)
+{
+	bool validSVGSave = false;
+	bool validBinarySave = false;
+	validBinarySave = CheckSaveBinary(cmdArgs, maze);
+	validSVGSave = CheckSaveSVG(cmdArgs, maze);
+
+	return (validSVGSave || validBinarySave);
+}
+
+bool IsUInt(const string& s)
+{
+	string::const_iterator it = s.begin();
+	while (it != s.end() && isdigit(*it)) ++it;
+	return !s.empty() && it == s.end();
+}
+
